@@ -7,7 +7,7 @@ pipeline {
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         SNS_TOPIC_ARN  = "arn:aws:sns:ap-south-1:571573792371:streaming-app-notifications"
     }
-s
+
     stages {
 
         stage('Checkout') {
@@ -34,7 +34,7 @@ s
         stage('Build Docker Images') {
             parallel {
 
-                stage('Frontend') {
+                stage('Build Frontend') {
                     steps {
                         dir('frontend') {
                             sh 'docker build -t streaming-frontend .'
@@ -42,7 +42,7 @@ s
                     }
                 }
 
-                stage('Auth Service') {
+                stage('Build Auth Service') {
                     steps {
                         dir('backend/authService') {
                             sh 'docker build -t streaming-auth .'
@@ -50,19 +50,19 @@ s
                     }
                 }
 
-                stage('Streaming Service') {
+                stage('Build Streaming Service') {
                     steps {
                         sh 'docker build -t streaming-streaming -f backend/streamingService/Dockerfile backend'
                     }
                 }
 
-                stage('Admin Service') {
+                stage('Build Admin Service') {
                     steps {
                         sh 'docker build -t streaming-admin -f backend/adminService/Dockerfile backend'
                     }
                 }
 
-                stage('Chat Service') {
+                stage('Build Chat Service') {
                     steps {
                         sh 'docker build -t streaming-chat -f backend/chatService/Dockerfile backend'
                     }
@@ -114,7 +114,7 @@ s
                     aws sns publish \
                     --topic-arn $SNS_TOPIC_ARN \
                     --subject "BUILD FAILED - StreamingApp" \
-                    --message "Jenkins build #${BUILD_NUMBER} failed. Check Jenkins logs." \
+                    --message "Jenkins build #${BUILD_NUMBER} failed. Check Jenkins console logs." \
                     --region $AWS_REGION
                 '''
             }
