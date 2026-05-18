@@ -1,0 +1,30 @@
+ecr:
+  registry: 571573792371.dkr.ecr.ap-south-1.amazonaws.com
+  tag: latest
+
+frontend:
+  replicas: 2
+  port: 80
+
+auth:
+  replicas: 2
+  port: 3001
+
+streaming:
+  replicas: 2
+  port: 3002
+
+admin:
+  replicas: 2
+  port: 3003
+
+chat:
+  replicas: 2
+  port: 3004
+
+mongo:
+  port: 27017
+
+env:
+  jwtSecret: changeme
+  mongoDb: streamingapp

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chat
+spec:
+  replicas: {{ .Values.chat.replicas }}
+  selector:
+    matchLabels:
+      app: chat
+  template:
+    metadata:
+      labels:
+        app: chat
+    spec:
+      containers:
+        - name: chat
+          image: "{{ .Values.ecr.registry }}/streaming-chat:{{ .Values.ecr.tag }}"
+          ports:
+            - containerPort: {{ .Values.chat.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.chat.port }}"
+            - name: MONGO_URI
+              value: "mongodb://mongo:{{ .Values.mongo.port }}/{{ .Values.env.mongoDb }}"
+            - name: JWT_SECRET
+              value: "{{ .Values.env.jwtSecret }}"
+            - name: CLIENT_URLS
+              value: "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chat-service
+spec:
+  selector:
+    app: chat
+  ports:
+    - port: {{ .Values.chat.port }}
+      targetPort: {{ .Values.chat.port }}

@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streaming
+spec:
+  replicas: {{ .Values.streaming.replicas }}
+  selector:
+    matchLabels:
+      app: streaming
+  template:
+    metadata:
+      labels:
+        app: streaming
+    spec:
+      containers:
+        - name: streaming
+          image: "{{ .Values.ecr.registry }}/streaming-streaming:{{ .Values.ecr.tag }}"
+          ports:
+            - containerPort: {{ .Values.streaming.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.streaming.port }}"
+            - name: MONGO_URI
+              value: "mongodb://mongo:{{ .Values.mongo.port }}/{{ .Values.env.mongoDb }}"
+            - name: JWT_SECRET
+              value: "{{ .Values.env.jwtSecret }}"
+            - name: CLIENT_URLS
+              value: "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: streaming-service
+spec:
+  selector:
+    app: streaming
+  ports:
+    - port: {{ .Values.streaming.port }}
+      targetPort: {{ .Values.streaming.port }}

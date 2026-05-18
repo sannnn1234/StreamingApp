@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth
+spec:
+  replicas: {{ .Values.auth.replicas }}
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - name: auth
+          image: "{{ .Values.ecr.registry }}/streaming-auth:{{ .Values.ecr.tag }}"
+          ports:
+            - containerPort: {{ .Values.auth.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.auth.port }}"
+            - name: MONGO_URI
+              value: "mongodb://mongo:{{ .Values.mongo.port }}/{{ .Values.env.mongoDb }}"
+            - name: JWT_SECRET
+              value: "{{ .Values.env.jwtSecret }}"
+            - name: CLIENT_URLS
+              value: "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    app: auth
+  ports:
+    - port: {{ .Values.auth.port }}
+      targetPort: {{ .Values.auth.port }}

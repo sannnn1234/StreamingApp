@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin
+spec:
+  replicas: {{ .Values.admin.replicas }}
+  selector:
+    matchLabels:
+      app: admin
+  template:
+    metadata:
+      labels:
+        app: admin
+    spec:
+      containers:
+        - name: admin
+          image: "{{ .Values.ecr.registry }}/streaming-admin:{{ .Values.ecr.tag }}"
+          ports:
+            - containerPort: {{ .Values.admin.port }}
+          env:
+            - name: PORT
+              value: "{{ .Values.admin.port }}"
+            - name: MONGO_URI
+              value: "mongodb://mongo:{{ .Values.mongo.port }}/{{ .Values.env.mongoDb }}"
+            - name: JWT_SECRET
+              value: "{{ .Values.env.jwtSecret }}"
+            - name: CLIENT_URLS
+              value: "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-service
+spec:
+  selector:
+    app: admin
+  ports:
+    - port: {{ .Values.admin.port }}
+      targetPort: {{ .Values.admin.port }}
