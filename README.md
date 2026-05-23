@@ -261,10 +261,11 @@ foreach ($svc in $services) {
 ## Jenkins Setup
 
 I launched a **t2.medium EC2 instance** using **Amazon Linux 2023**.
-```
-![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/ec2.png)
-```
 
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/ec2.png)
+
+---
+---
 ### Security Group
 
 * Opened **port 8080** for Jenkins UI access
