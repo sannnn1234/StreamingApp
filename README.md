@@ -202,9 +202,7 @@ aws ecr create-repository --repository-name streaming-admin --region ap-south-1
 aws ecr create-repository --repository-name streaming-chat --region ap-south-1
 ```
 
-```
 ## AWS ECR
-```
 ![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/ecr.png)
 
 ---
@@ -333,13 +331,16 @@ eksctl create cluster \
   --managed
 ```
 
+## EKS CLUSTER
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/cluster.png)
+
+---
 ### Configure kubectl
 
 ```bash
 aws eks update-kubeconfig --name streaming-app-cluster --region ap-south-1
 kubectl get nodes
 ```
-
 ---
 
 ## Deploying with Helm
@@ -356,11 +357,152 @@ Verify deployment:
 kubectl get pods
 kubectl get svc
 ```
+## PODS
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/pods.png)
 
 * The **frontend-service** exposes an **EXTERNAL-IP**
 * This LoadBalancer URL is used to access the application
 
 ---
+
+# Monitoring and Logging
+I set up monitoring using Amazon CloudWatch since the app runs on Amazon Web Services
+
+### Container Insights
+I enabled the CloudWatch Observability addon on the EKS cluster. This automatically collects metrics like:
+
+* CPU usage
+* Memory usage
+* Network traffic
+* Disk usage
+* Pod restart counts
+
+from all the nodes and pods.
+
+To view these metrics:
+
+```bash
+AWS Console -> CloudWatch -> Container Insights -> Select the cluster
+```
+---
+
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/cloudwatch.png)
+
+
+### Control Plane Logs
+I enabled logging for the EKS control plane. This helps capture cluster-level activities such as:
+* API requests
+* Authentication events
+* Scheduler decisions
+* Controller manager actions
+
+These logs appear in CloudWatch under the log group:
+```bash
+/aws/eks/streaming-app-cluster/cluster
+```
+I enabled all five control plane log types:
+* API server logs
+* Audit logs
+* Authenticator logs
+* Controller manager logs
+* Scheduler logs
+---
+
+### Alarms
+I configured two CloudWatch alarms:
+#### EKS-HighCPU-StreamingApp
+Triggers when average CPU usage exceeds **80% for 10 minutes**.
+
+#### EKS-HighMemory-StreamingApp
+Triggers when average memory usage exceeds **80% for 10 minutes**.
+These alarms can later be integrated with:
+* Email notifications using SNS
+* Slack alerts
+* PagerDuty or other incident tools
+
+---
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/alarm.png)
+
+## SNS Notification alert
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/sns.png)
+
+## Checking Logs from Terminal
+Used `kubectl` commands for quick debugging.
+
+### View logs from a pod
+```bash
+kubectl logs <pod-name>
+```
+
+### Stream logs live
+
+```bash
+kubectl logs -f <pod-name>
+```
+
+### View logs for all frontend pods
+```bash
+kubectl logs -l app=frontend
+```
+
+---
+
+## Checking Resource Usage
+
+### Node-level CPU and memory usage
+```bash
+kubectl top nodes
+```
+
+### Pod-level resource usage
+```bash
+kubectl top pods
+```
+
+### View recent cluster events
+Helpful when pods fail to start.
+
+```bash
+kubectl get events --sort-by='.lastTimestamp'
+```
+
+---
+
+## Troubleshooting
+
+### Pod not starting
+
+Check pod events and detailed error messages:
+
+```bash
+kubectl describe pod <pod-name>
+```
+
+---
+
+### Application returning errors
+Check container logs:
+
+```bash
+kubectl logs <pod-name>
+```
+
+---
+
+### Unable to access the application
+Verify the service has an external LoadBalancer IP:
+
+```bash
+kubectl get svc
+```
+
+---
+### Image pull errors
+Usually caused by:
+* Expired ECR login session
+* Incorrect image URI in `values.yaml`
+* Missing image pull permissions
+----
 
 ## Cleanup (Important)
 
@@ -370,15 +512,4 @@ To avoid unnecessary AWS charges, delete all resources after use:
 helm uninstall streaming-app
 eksctl delete cluster --name streaming-app-cluster --region ap-south-1
 ```
-
-Also remember to:
-
-* Delete all **ECR repositories**
-* **Terminate the Jenkins EC2 instance**
-
----
-
-**Setup Complete**
-
-This completes the full end-to-end setup of the Streaming App using Docker, Jenkins, AWS ECR, EKS, and Helm.
 
