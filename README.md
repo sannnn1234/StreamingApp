@@ -205,7 +205,7 @@ aws ecr create-repository --repository-name streaming-chat --region ap-south-1
 ```
 ## AWS ECR
 ```
-![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/Document/ecr.png)
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/ecr.png)
 
 ---
 
@@ -261,6 +261,9 @@ foreach ($svc in $services) {
 ## Jenkins Setup
 
 I launched a **t2.medium EC2 instance** using **Amazon Linux 2023**.
+```
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/ec2.png)
+```
 
 ### Security Group
 
