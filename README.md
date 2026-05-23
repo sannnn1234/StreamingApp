@@ -504,6 +504,9 @@ Usually caused by:
 * Missing image pull permissions
 ----
 
+## Running Application
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/document/application.png)
+
 ## Cleanup (Important)
 
 To avoid unnecessary AWS charges, delete all resources after use:
