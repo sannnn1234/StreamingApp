@@ -133,6 +133,239 @@ Automated tests are not yet included. Recommended smoke checks:
 2. Upload a small video + thumbnail via the admin dashboard (requires valid S3 credentials).
 3. Confirm playback from the browse page and verify that chat messages broadcast between multiple browser tabs.
 
-## License
+Here is a clean, well-structured **`README.md` Setup Guide** based exactly on what you wrote, formatted and ready to drop into your repository.
 
-MIT © StreamFlix Team
+---
+
+# Streaming App – Setup Guide
+
+This document describes the **exact steps I followed to set up the entire project from scratch**, including local tooling, AWS infrastructure, CI with Jenkins, and deployment to Kubernetes using Helm.
+
+---
+
+## Tools Installed
+
+* **Git** (already installed)
+* **Docker Desktop** – for building container images
+* **AWS CLI v2** – to interact with Amazon Web Services from the terminal
+* **kubectl** – to manage the Kubernetes cluster
+* **eksctl** – simplifies creation and management of EKS clusters
+* **Helm** – for packaging and deploying Kubernetes applications
+---
+
+## Getting the Code
+
+```bash
+git clone https://github.com/rohitguptaangular/StreamingApp.git
+cd StreamingApp
+git remote add upstream https://github.com/UnpredictablePrashant/StreamingApp.git
+```
+
+* Forked repo:
+  [StreamingApp (Fork)](https://github.com/rohitguptaangular/StreamingApp.git?utm_source=chatgpt.com)
+
+* Original upstream repo:
+  [StreamingApp (Upstream)](https://github.com/UnpredictablePrashant/StreamingApp.git?utm_source=chatgpt.com)
+
+The `upstream` remote allows pulling updates from the original repository later:
+
+```bash
+git fetch upstream
+git merge upstream/main
+```
+
+---
+
+## AWS Configuration
+
+Configured AWS credentials:
+
+```bash
+aws configure
+```
+
+Values used:
+
+* Region: `ap-south-1` (Mumbai)
+* Output format: `json`
+
+Verified configuration:
+
+```bash
+aws sts get-caller-identity
+```
+
+---
+
+## Creating ECR Repositories
+
+Each microservice uses its own **ECR repository**:
+
+```bash
+aws ecr create-repository --repository-name streaming-frontend --region ap-south-1
+aws ecr create-repository --repository-name streaming-auth --region ap-south-1
+aws ecr create-repository --repository-name streaming-streaming --region ap-south-1
+aws ecr create-repository --repository-name streaming-admin --region ap-south-1
+aws ecr create-repository --repository-name streaming-chat --region ap-south-1
+```
+
+---
+
+## Building and Pushing Docker Images
+
+### Login to ECR
+
+```bash
+aws ecr get-login-password --region ap-south-1 \
+| docker login --username AWS --password-stdin <ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com
+```
+
+### Build Images
+
+Dockerfiles were already present in the repository.
+
+```bash
+docker build -t streaming-frontend ./frontend
+docker build -t streaming-auth ./backend/authService
+docker build -t streaming-streaming -f ./backend/streamingService/Dockerfile ./backend
+docker build -t streaming-admin -f ./backend/adminService/Dockerfile ./backend
+docker build -t streaming-chat -f ./backend/chatService/Dockerfile ./backend
+```
+
+> **Note:** Streaming, Admin, and Chat services require `./backend` as the build context because their Dockerfiles reference shared backend files.
+
+### Tag and Push Images
+
+```bash
+ECR=<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com
+
+for svc in frontend auth streaming admin chat; do
+  docker tag streaming-$svc:latest $ECR/streaming-$svc:latest
+  docker push $ECR/streaming-$svc:latest
+done
+```
+
+---
+
+## Jenkins Setup
+
+I launched a **t2.medium EC2 instance** using **Amazon Linux 2023**.
+
+### Security Group
+
+* Opened **port 8080** for Jenkins UI access
+
+### Install Dependencies
+
+```bash
+sudo yum install -y java-21-amazon-corretto docker git
+sudo systemctl start docker
+sudo systemctl enable docker
+```
+
+### Install Jenkins
+
+```bash
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum install -y jenkins
+sudo usermod -aG docker jenkins
+sudo systemctl start jenkins
+```
+
+> **Important:** Jenkins `2.555` requires **Java 21**. Jenkins failed to start with Java 17 until Java 21 was installed and `JAVA_HOME` was set correctly.
+
+### Install AWS CLI on Jenkins EC2
+
+```bash
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+```
+
+### Jenkins Configuration
+
+In Jenkins UI, I installed these plugins:
+
+* Pipeline
+* Git
+* Docker Pipeline
+* GitHub Integration
+
+Added AWS credentials:
+
+* **Type:** Secret Text
+* **IDs:**
+
+  * `aws-access-key-id`
+  * `aws-secret-access-key`
+
+---
+
+## EKS Cluster Setup
+
+Created the Kubernetes cluster using `eksctl`:
+
+```bash
+eksctl create cluster \
+  --name streaming-app-cluster \
+  --region ap-south-1 \
+  --nodegroup-name standard-workers \
+  --node-type t3.medium \
+  --nodes 2 \
+  --nodes-min 1 \
+  --nodes-max 3 \
+  --managed
+```
+
+⏱️ Cluster creation took approximately **15–20 minutes**.
+
+### Configure kubectl
+
+```bash
+aws eks update-kubeconfig --name streaming-app-cluster --region ap-south-1
+kubectl get nodes
+```
+
+---
+
+## Deploying with Helm
+
+Deployed the application using Helm:
+
+```bash
+helm install streaming-app ./helm/streaming-app
+```
+
+Verify deployment:
+
+```bash
+kubectl get pods
+kubectl get svc
+```
+
+* The **frontend-service** exposes an **EXTERNAL-IP**
+* This LoadBalancer URL is used to access the application
+
+---
+
+## Cleanup (Important)
+
+To avoid unnecessary AWS charges, delete all resources after use:
+
+```bash
+helm uninstall streaming-app
+eksctl delete cluster --name streaming-app-cluster --region ap-south-1
+```
+
+Also remember to:
+
+* Delete all **ECR repositories**
+* **Terminate the Jenkins EC2 instance**
+
+---
+
+**Setup Complete**
+
+This completes the full end-to-end setup of the Streaming App using Docker, Jenkins, AWS ECR, EKS, and Helm.
+
