@@ -156,17 +156,10 @@ This document describes the **exact steps I followed to set up the entire projec
 ## Getting the Code
 
 ```bash
-git clone https://github.com/rohitguptaangular/StreamingApp.git
+git clone https://github.com/sannnn1234/StreamingApp.git
 cd StreamingApp
 git remote add upstream https://github.com/UnpredictablePrashant/StreamingApp.git
 ```
-
-* Forked repo:
-  [StreamingApp (Fork)](https://github.com/rohitguptaangular/StreamingApp.git?utm_source=chatgpt.com)
-
-* Original upstream repo:
-  [StreamingApp (Upstream)](https://github.com/UnpredictablePrashant/StreamingApp.git?utm_source=chatgpt.com)
-
 The `upstream` remote allows pulling updates from the original repository later:
 
 ```bash
@@ -209,6 +202,13 @@ aws ecr create-repository --repository-name streaming-admin --region ap-south-1
 aws ecr create-repository --repository-name streaming-chat --region ap-south-1
 ```
 
+```
+## AWS ECR
+```
+![Local Setup](https://raw.githubusercontent.com/sannnn1234/StreamingApp/main/Document/ecr.png)
+
+---
+
 ---
 
 ## Building and Pushing Docker Images
@@ -239,10 +239,21 @@ docker build -t streaming-chat -f ./backend/chatService/Dockerfile ./backend
 ```bash
 ECR=<ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com
 
-for svc in frontend auth streaming admin chat; do
-  docker tag streaming-$svc:latest $ECR/streaming-$svc:latest
-  docker push $ECR/streaming-$svc:latest
-done
+@services = {
+   'frontend',
+   'auth',
+   'streaming',
+   'admin',
+   'chat'
+}
+foreach ($svc in $services) {
+    Write-Host "Processing service: $svc"
+    $localImage  = "streaming-$svc:latest"
+    $remoteImage = "$ECR/streaming-$svc:latest"
+    docker tag $localImage $remoteImage
+    docker push $remoteImage
+}
+
 ```
 
 ---
@@ -317,8 +328,6 @@ eksctl create cluster \
   --nodes-max 3 \
   --managed
 ```
-
-⏱️ Cluster creation took approximately **15–20 minutes**.
 
 ### Configure kubectl
 
